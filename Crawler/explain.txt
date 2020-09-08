@@ -1,0 +1,84 @@
+How Program works:
+
+1. Main data structures of MyCrawler
+
+    1.1 Task : Each page that needs to crawled is considered as a Task. It is defined as an object:
+         task = {taskid, url, host, sequence, depth, importance, novelty, crawl_time, response,page_size}
+                 taskid : normalised url key
+                 url : url of the page
+                 host : hosting site
+                 sequence : sequence of insertion
+                 depth : distance of the page from initial seed url
+                 importance : importance score (initial default value = 1)
+                 novelty : novelty score (initial default value = max int)
+                 crawl_time : time the page was crawled
+                 response : html response code of the page
+                 page_size : size of html page
+    1.2 Frontier : Priority queue of tasks that has customized get and put methods.
+                   The put method checks if the task is already in the queue if yes then heapifies the queue with new content.                   
+    1.3 Page_crawled : Dictionary containing url of all the pages that has been crawled.
+    1.4 Site_crawled : Dictionary containing all the unique sites along with its novelty score and crawl count
+
+2. Major functions of MyCrawler
+   Following are the major functions of the program called in sequence:
+
+    2.1 MyCrawler.build_frontier() : builds an initial frontier of tasks using seed urls.
+    2.2 MyCrawler.crawl() :
+        Repeat following until max_crawl_limit is reached
+            a) dequeue task from the frontier
+            b) if novelty score of the task is updated push the task back to the queue
+            c) update site_crawled and page_crawled and crawl_count
+            d) dispatch the task to fetch method
+    2.3 MyCrawler.fetch(task) :
+        Calls LinkExtractor to get all the links and repeat following on all the links
+            a) If the link is already crawled, continue with next link
+            b) Increase importance score of the page if link is already in the frontier
+            c) Decrease novelty score if link belongs to a site already being crawled
+            d) if crawl limit exceeded for site the task belongs to, continue with next task
+            e) update site_crawled if a new site is encountered
+            f) Create a new task and push it to the frontier
+
+3. Features implemented
+   => Ignore crawling for folders ["/cgi-bin/", "/images/", "/javascripts/", "/photos/", "/js/", "/css/", "/stylesheets/"]
+   => Ignore crawling for extensions such as .jpg ,.mp3,.mp4, etc
+   => Ignore crawling urls starting with [tel:, whatsapp:, mailto:, #, etc]
+   => Crawl only for allowed MIME types
+   => Maintain a per site crawl limit for e.g 100
+   => Handling relative url path using urljoin and urlparse
+   => Respect robots.txt while crawling
+   => Ensure that page is only crawled once
+   => Novelty and Importance score update with each encounter of url
+   
+   
+4. Use of Libraries
+   googlesearch - used for fetching google search results of query
+   BeautifulSoup - used for scraping all href links on the page
+   datetime - used for date/time functions
+   hashlib - used for hashing url key
+   heapq - used internally in the priority queue
+   itertools - used to maintain atomic counter for sequence of queue element
+   queue - used internally in the priority queue
+   urllib - used for requesting the page
+   urljoin - used for joining relative urls
+   urlparse - used for parsing url and generating hash key
+   sys - used for max size
+
+5. Use of threading and locks
+   The application has a maximum thread count constant (1000 in the code).
+   In the main method threads are spawned based on the current queue size, current active threads and maximum allowed limit of threads. 
+   => Locks implemented for updating crawl count and dictionary data structures.
+   => Queue implementation is used which is thread safe
+
+6. Known Limitations
+   => Code goes slow as more threads are spawned or more crawls are made.
+      Eg. Works quickly for 1000 crawl count with 1000 threads but is slow for 10000 crawl count with 1000 threads.
+   => Urlopen method gives unicode exception for some pages but the exception is caught and doesn't affect the run.
+   => The application doesn't ensure that there is only one download process active a time for a site.
+
+
+
+
+
+
+
+
